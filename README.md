@@ -22,13 +22,15 @@ flowchart LR
     Milestones -->|No| End
     SubFlow --> End([End])
 
-    classDef userInput fill:#E6E6FA,stroke:#333,stroke-width:2px
-    classDef database fill:#87CEEB,stroke:#333,stroke-width:2px
-    classDef process fill:#F0E68C,stroke:#333,stroke-width:2px
+    classDef userInput fill:#E6E6FA,stroke:#333,stroke-width:2px,color:#000
+    classDef database fill:#4682B4,stroke:#333,stroke-width:2px,color:#FFF
+    classDef loopProcess fill:#FFE4B5,stroke:#333,stroke-width:2px,color:#000
+    classDef launchAction fill:#F0E68C,stroke:#333,stroke-width:2px,color:#000
 
     class Input,Summary userInput
     class Create,GrantSetup database
-    class ResourceLoop process
+    class ResourceLoop loopProcess
+    class SubFlow launchAction
 ```
 
 ### Detailed Flow (by Phase)
@@ -44,14 +46,17 @@ flowchart LR
     SetInternal --> CreateProject[(Create Project)]
     CreateProject --> Phase2([To Phase 2:<br/>Grant Setup])
 
-    classDef screenStyle fill:#E6E6FA,stroke:#333,stroke-width:2px
-    classDef dbStyle fill:#87CEEB,stroke:#333,stroke-width:2px
-    classDef startEnd fill:#90EE90,stroke:#333,stroke-width:2px
-    classDef transition fill:#FFE4B5,stroke:#333,stroke-width:2px
+    classDef screenStyle fill:#E6E6FA,stroke:#333,stroke-width:2px,color:#000
+    classDef dbStyle fill:#4682B4,stroke:#333,stroke-width:2px,color:#FFF
+    classDef startEnd fill:#90EE90,stroke:#333,stroke-width:2px,color:#000
+    classDef prepareStyle fill:#B0E0E6,stroke:#333,stroke-width:2px,color:#000
+    classDef setStyle fill:#98FB98,stroke:#333,stroke-width:2px,color:#000
 
     class NewProjectScreen screenStyle
     class CreateProject dbStyle
     class Start,Phase2 startEnd
+    class PrepareProject prepareStyle
+    class SetInternal setStyle
 ```
 
 #### Phase 2: Grant Setup (Optional)
@@ -64,13 +69,15 @@ flowchart LR
     CreateGrant --> InitCounter
     InitCounter --> Phase3([To Phase 3:<br/>Resource Loop])
 
-    classDef dbStyle fill:#87CEEB,stroke:#333,stroke-width:2px
-    classDef startEnd fill:#90EE90,stroke:#333,stroke-width:2px
-    classDef processStyle fill:#F0E68C,stroke:#333,stroke-width:2px
+    classDef dbStyle fill:#4682B4,stroke:#333,stroke-width:2px,color:#FFF
+    classDef startEnd fill:#90EE90,stroke:#333,stroke-width:2px,color:#000
+    classDef prepareStyle fill:#B0E0E6,stroke:#333,stroke-width:2px,color:#000
+    classDef initStyle fill:#98FB98,stroke:#333,stroke-width:2px,color:#000
 
     class CreateGrant dbStyle
     class Phase1,Phase3 startEnd
-    class PrepareGrant,InitCounter processStyle
+    class PrepareGrant prepareStyle
+    class InitCounter initStyle
 ```
 
 #### Phase 3: Resource Creation Loop
@@ -96,17 +103,24 @@ flowchart TD
     GrantConfig -.-> Increment
     Increment --> MoreResources
 
-    classDef screenStyle fill:#E6E6FA,stroke:#333,stroke-width:2px
-    classDef dbStyle fill:#87CEEB,stroke:#333,stroke-width:2px
-    classDef errorStyle fill:#FFB6C1,stroke:#333,stroke-width:2px
-    classDef startEnd fill:#90EE90,stroke:#333,stroke-width:2px
-    classDef processStyle fill:#F0E68C,stroke:#333,stroke-width:2px
-    classDef noteStyle fill:#FFF8DC,stroke:#333,stroke-width:2px,stroke-dasharray: 5 5
+    classDef screenStyle fill:#E6E6FA,stroke:#333,stroke-width:2px,color:#000
+    classDef errorScreenStyle fill:#FFB6C1,stroke:#333,stroke-width:2px,color:#000
+    classDef dbStyle fill:#4682B4,stroke:#333,stroke-width:2px,color:#FFF
+    classDef startEnd fill:#90EE90,stroke:#333,stroke-width:2px,color:#000
+    classDef getStyle fill:#FFFACD,stroke:#333,stroke-width:2px,color:#000
+    classDef prepareStyle fill:#B0E0E6,stroke:#333,stroke-width:2px,color:#000
+    classDef checkStyle fill:#F08080,stroke:#333,stroke-width:2px,color:#000
+    classDef incrementStyle fill:#FFA07A,stroke:#333,stroke-width:2px,color:#000
+    classDef noteStyle fill:#FFF8DC,stroke:#333,stroke-width:2px,stroke-dasharray: 5 5,color:#000
 
-    class ResourceScreen,ErrorScreen screenStyle
+    class ResourceScreen screenStyle
+    class ErrorScreen errorScreenStyle
     class CreateResource dbStyle
     class Phase2,Phase4 startEnd
-    class GetResource,PrepareResource,DupeCheck,Increment processStyle
+    class GetResource getStyle
+    class PrepareResource prepareStyle
+    class DupeCheck checkStyle
+    class Increment incrementStyle
     class GrantConfig noteStyle
 ```
 
@@ -132,18 +146,25 @@ flowchart TD
     TransformGrants --> CreateGrantLinks[(Bulk Create<br/>Grant Links)]
     CreateGrantLinks --> Return([Return to<br/>Resource Loop])
 
-    classDef screenStyle fill:#E6E6FA,stroke:#333,stroke-width:2px
-    classDef dbStyle fill:#87CEEB,stroke:#333,stroke-width:2px
-    classDef loopStyle fill:#FFD700,stroke:#333,stroke-width:2px
-    classDef errorStyle fill:#FFB6C1,stroke:#333,stroke-width:2px
-    classDef startEnd fill:#90EE90,stroke:#333,stroke-width:2px
-    classDef processStyle fill:#F0E68C,stroke:#333,stroke-width:2px
+    classDef screenStyle fill:#E6E6FA,stroke:#333,stroke-width:2px,color:#000
+    classDef errorScreenStyle fill:#FFB6C1,stroke:#333,stroke-width:2px,color:#000
+    classDef dbStyle fill:#4682B4,stroke:#333,stroke-width:2px,color:#FFF
+    classDef loopStyle fill:#FFD700,stroke:#333,stroke-width:2px,color:#000
+    classDef startEnd fill:#90EE90,stroke:#333,stroke-width:2px,color:#000
+    classDef getStyle fill:#FFFACD,stroke:#333,stroke-width:2px,color:#000
+    classDef setStyle fill:#98FB98,stroke:#333,stroke-width:2px,color:#000
+    classDef transformStyle fill:#DDA0DD,stroke:#333,stroke-width:2px,color:#000
+    classDef addStyle fill:#FFA07A,stroke:#333,stroke-width:2px,color:#000
 
-    class GrantScreen,ErrorScreen screenStyle
+    class GrantScreen screenStyle
+    class ErrorScreen errorScreenStyle
     class CreateResourceGrant,CreateGrantLinks dbStyle
     class GrantLoop loopStyle
     class Start,Return startEnd
-    class GetGrants,TransformGrants,AddToCollection processStyle
+    class GetGrants getStyle
+    class NoGrantsError setStyle
+    class TransformGrants transformStyle
+    class AddToCollection addStyle
 ```
 
 #### Phase 4: Summary & Completion
@@ -156,13 +177,15 @@ flowchart LR
     CreateMilestones -->|No| End([End])
     LaunchMilestones --> End
 
-    classDef screenStyle fill:#E6E6FA,stroke:#333,stroke-width:2px
-    classDef startEnd fill:#90EE90,stroke:#333,stroke-width:2px
-    classDef processStyle fill:#F0E68C,stroke:#333,stroke-width:2px
+    classDef screenStyle fill:#E6E6FA,stroke:#333,stroke-width:2px,color:#000
+    classDef startEnd fill:#90EE90,stroke:#333,stroke-width:2px,color:#000
+    classDef getStyle fill:#FFFACD,stroke:#333,stroke-width:2px,color:#000
+    classDef launchStyle fill:#F0E68C,stroke:#333,stroke-width:2px,color:#000
 
     class SummaryScreen screenStyle
     class Phase3,End startEnd
-    class GetAllResources,LaunchMilestones processStyle
+    class GetAllResources getStyle
+    class LaunchMilestones launchStyle
 ```
 
 ## Key Components
