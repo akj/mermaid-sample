@@ -31,88 +31,138 @@ flowchart LR
     class ResourceLoop process
 ```
 
-### Detailed Flow
+### Detailed Flow (by Phase)
+
+#### Phase 1: Project Creation
+```mermaid
+flowchart LR
+    Start([Start]) --> NewProjectScreen[/New Project Screen/]
+    NewProjectScreen --> PrepareProject[Prepare Project Data]
+    PrepareProject --> IsInternal{Internal<br/>Type?}
+    IsInternal -->|Yes| SetInternal[Set Internal Flag]
+    IsInternal -->|No| CreateProject
+    SetInternal --> CreateProject[(Create Project)]
+    CreateProject --> Phase2([To Phase 2:<br/>Grant Setup])
+
+    classDef screenStyle fill:#E6E6FA,stroke:#333,stroke-width:2px
+    classDef dbStyle fill:#87CEEB,stroke:#333,stroke-width:2px
+    classDef startEnd fill:#90EE90,stroke:#333,stroke-width:2px
+    classDef transition fill:#FFE4B5,stroke:#333,stroke-width:2px
+
+    class NewProjectScreen screenStyle
+    class CreateProject dbStyle
+    class Start,Phase2 startEnd
+```
+
+#### Phase 2: Grant Setup (Optional)
+```mermaid
+flowchart LR
+    Phase1([From Phase 1]) --> HasGrant{Grant<br/>Funded?}
+    HasGrant -->|Yes| PrepareGrant[Prepare Grant Data]
+    HasGrant -->|No| InitCounter[Initialize Counter]
+    PrepareGrant --> CreateGrant[(Create Project Grant)]
+    CreateGrant --> InitCounter
+    InitCounter --> Phase3([To Phase 3:<br/>Resource Loop])
+
+    classDef dbStyle fill:#87CEEB,stroke:#333,stroke-width:2px
+    classDef startEnd fill:#90EE90,stroke:#333,stroke-width:2px
+    classDef processStyle fill:#F0E68C,stroke:#333,stroke-width:2px
+
+    class CreateGrant dbStyle
+    class Phase1,Phase3 startEnd
+    class PrepareGrant,InitCounter processStyle
+```
+
+#### Phase 3: Resource Creation Loop
+```mermaid
+flowchart TD
+    Phase2([From Phase 2]) --> MoreResources{More<br/>Resources?}
+    MoreResources -->|Yes| ResourceScreen[/Resource Details Screen/]
+    MoreResources -->|No| Phase4([To Phase 4:<br/>Summary])
+
+    ResourceScreen --> GetResource[Get Resource]
+    GetResource --> PrepareResource[Prepare Resource Data]
+    PrepareResource --> DupeCheck[Check for Duplicates]
+
+    DupeCheck --> IsDupe{Duplicate?}
+    IsDupe -->|Yes| ErrorScreen[/Error Screen/]
+    ErrorScreen -.Back.-> ResourceScreen
+
+    IsDupe -->|No| GrantFunded{Grant<br/>Funded?}
+    GrantFunded -->|No| CreateResource[(Create Resource)]
+    GrantFunded -->|Yes| GrantConfig[See Grant Funding Details Below]
+
+    CreateResource --> Increment[Increment Counter]
+    GrantConfig -.-> Increment
+    Increment --> MoreResources
+
+    classDef screenStyle fill:#E6E6FA,stroke:#333,stroke-width:2px
+    classDef dbStyle fill:#87CEEB,stroke:#333,stroke-width:2px
+    classDef errorStyle fill:#FFB6C1,stroke:#333,stroke-width:2px
+    classDef startEnd fill:#90EE90,stroke:#333,stroke-width:2px
+    classDef processStyle fill:#F0E68C,stroke:#333,stroke-width:2px
+    classDef noteStyle fill:#FFF8DC,stroke:#333,stroke-width:2px,stroke-dasharray: 5 5
+
+    class ResourceScreen,ErrorScreen screenStyle
+    class CreateResource dbStyle
+    class Phase2,Phase4 startEnd
+    class GetResource,PrepareResource,DupeCheck,Increment processStyle
+    class GrantConfig noteStyle
+```
+
+#### Phase 3a: Grant Funding Configuration (Detail)
+This section expands the "Grant Funded? → Yes" path from Phase 3.
 
 ```mermaid
 flowchart TD
-    Start([Start]) --> NewProjectScreen[/New Project Screen/]
+    Start([Grant Funded = Yes]) --> GetGrants[Get Project Grants]
+    GetGrants --> HasGrants{Has<br/>Grants?}
+    HasGrants -->|No| NoGrantsError[Set Error]
+    NoGrantsError --> ErrorScreen[/Error Screen/]
 
-    subgraph ProjectCreation["1️⃣ Project Creation"]
-        NewProjectScreen --> PrepareProject[Prepare Project Data]
-        PrepareProject --> IsInternal{Internal<br/>Type?}
-        IsInternal -->|Yes| SetInternal[Set Internal Flag]
-        IsInternal -->|No| CreateProject
-        SetInternal --> CreateProject[(Create Project)]
-    end
+    HasGrants -->|Yes| GrantLoop{{For Each Grant}}
+    GrantLoop --> GrantScreen[/Grant Funding Screen/]
+    GrantScreen --> FundedByGrant{Fund By<br/>This Grant?}
+    FundedByGrant -->|Yes| AddToCollection[Add to Collection]
+    FundedByGrant -->|No| GrantLoop
+    AddToCollection --> GrantLoop
 
-    subgraph GrantSetup["2️⃣ Grant Setup (Optional)"]
-        CreateProject --> HasGrant{Grant<br/>Funded?}
-        HasGrant -->|Yes| PrepareGrant[Prepare Grant Data]
-        HasGrant -->|No| InitCounter
-        PrepareGrant --> CreateGrant[(Create Project Grant)]
-        CreateGrant --> InitCounter[Initialize Counter]
-    end
+    GrantLoop -->|Done| CreateResourceGrant[(Create Resource<br/>with Grants)]
+    CreateResourceGrant --> TransformGrants[Transform Grant Data]
+    TransformGrants --> CreateGrantLinks[(Bulk Create<br/>Grant Links)]
+    CreateGrantLinks --> Return([Return to<br/>Resource Loop])
 
-    subgraph ResourceLoop["3️⃣ Resource Creation Loop"]
-        InitCounter --> MoreResources{More<br/>Resources?}
-        MoreResources -->|Yes| ResourceScreen[/Resource Details Screen/]
-
-        ResourceScreen --> GetResource[Get Resource]
-        GetResource --> PrepareResource[Prepare Resource Data]
-        PrepareResource --> DupeCheck[Check for Duplicates]
-
-        DupeCheck --> IsDupe{Duplicate?}
-        IsDupe -->|Yes| ErrorScreen[/Error Screen/]
-        ErrorScreen -.Back.-> ResourceScreen
-
-        IsDupe -->|No| GrantFunded{Grant<br/>Funded?}
-    end
-
-    subgraph GrantFunding["3️⃣a Grant Funding Configuration"]
-        GrantFunded -->|Yes| GetGrants[Get Project Grants]
-        GetGrants --> HasGrants{Has<br/>Grants?}
-        HasGrants -->|No| NoGrantsError[Set Error]
-        NoGrantsError --> ErrorScreen
-
-        HasGrants -->|Yes| GrantLoop{{For Each Grant}}
-        GrantLoop --> GrantScreen[/Grant Funding Screen/]
-        GrantScreen --> FundedByGrant{Fund By<br/>This Grant?}
-        FundedByGrant -->|Yes| AddToCollection[Add to Collection]
-        FundedByGrant -->|No| GrantLoop
-        AddToCollection --> GrantLoop
-
-        GrantLoop -->|Done| CreateResourceGrant[(Create Resource<br/>with Grants)]
-        CreateResourceGrant --> TransformGrants[Transform Grant Data]
-        TransformGrants --> CreateGrantLinks[(Bulk Create<br/>Grant Links)]
-        CreateGrantLinks --> Increment
-    end
-
-    GrantFunded -->|No| CreateResource[(Create Resource)]
-    CreateResource --> Increment[Increment Counter]
-
-    Increment --> MoreResources
-
-    subgraph Summary["4️⃣ Summary & Completion"]
-        MoreResources -->|No| GetAllResources[Get All Resources]
-        GetAllResources --> SummaryScreen[/Summary Screen/]
-        SummaryScreen --> CreateMilestones{Create<br/>Milestones?}
-        CreateMilestones -->|Yes| LaunchMilestones[Launch Milestone Flow]
-        CreateMilestones -->|No| End
-        LaunchMilestones --> End([End])
-    end
-
-    %% Styling
     classDef screenStyle fill:#E6E6FA,stroke:#333,stroke-width:2px
     classDef dbStyle fill:#87CEEB,stroke:#333,stroke-width:2px
     classDef loopStyle fill:#FFD700,stroke:#333,stroke-width:2px
     classDef errorStyle fill:#FFB6C1,stroke:#333,stroke-width:2px
     classDef startEnd fill:#90EE90,stroke:#333,stroke-width:2px
+    classDef processStyle fill:#F0E68C,stroke:#333,stroke-width:2px
 
-    class NewProjectScreen,ResourceScreen,GrantScreen,SummaryScreen screenStyle
-    class CreateProject,CreateGrant,CreateResource,CreateResourceGrant,CreateGrantLinks dbStyle
+    class GrantScreen,ErrorScreen screenStyle
+    class CreateResourceGrant,CreateGrantLinks dbStyle
     class GrantLoop loopStyle
-    class ErrorScreen errorStyle
-    class Start,End startEnd
+    class Start,Return startEnd
+    class GetGrants,TransformGrants,AddToCollection processStyle
+```
+
+#### Phase 4: Summary & Completion
+```mermaid
+flowchart LR
+    Phase3([From Phase 3]) --> GetAllResources[Get All Resources]
+    GetAllResources --> SummaryScreen[/Summary Screen/]
+    SummaryScreen --> CreateMilestones{Create<br/>Milestones?}
+    CreateMilestones -->|Yes| LaunchMilestones[Launch Milestone Flow]
+    CreateMilestones -->|No| End([End])
+    LaunchMilestones --> End
+
+    classDef screenStyle fill:#E6E6FA,stroke:#333,stroke-width:2px
+    classDef startEnd fill:#90EE90,stroke:#333,stroke-width:2px
+    classDef processStyle fill:#F0E68C,stroke:#333,stroke-width:2px
+
+    class SummaryScreen screenStyle
+    class Phase3,End startEnd
+    class GetAllResources,LaunchMilestones processStyle
 ```
 
 ## Key Components
