@@ -3,104 +3,116 @@
 ## Overview
 Comprehensive project creation flow that guides users through creating a new project with optional grant funding and resource assignments.
 
-## Flow Diagram
+## Flow Diagrams
+
+### High-Level Overview
+```mermaid
+flowchart LR
+    Start([Start]) --> Input[/Collect Project Info/]
+    Input --> Create[(Create Project)]
+    Create --> Grant{Grant<br/>Funded?}
+    Grant -->|Yes| GrantSetup[(Setup Grant)]
+    Grant -->|No| Resources
+    GrantSetup --> Resources{Add<br/>Resources?}
+    Resources -->|Yes| ResourceLoop[Resource Loop]
+    Resources -->|No| Summary
+    ResourceLoop --> Summary[/Show Summary/]
+    Summary --> Milestones{Create<br/>Milestones?}
+    Milestones -->|Yes| SubFlow[Launch Milestone Flow]
+    Milestones -->|No| End
+    SubFlow --> End([End])
+
+    classDef userInput fill:#E6E6FA,stroke:#333,stroke-width:2px
+    classDef database fill:#87CEEB,stroke:#333,stroke-width:2px
+    classDef process fill:#F0E68C,stroke:#333,stroke-width:2px
+
+    class Input,Summary userInput
+    class Create,GrantSetup database
+    class ResourceLoop process
+```
+
+### Detailed Flow
 
 ```mermaid
 flowchart TD
-    Start([Start Flow]) --> NewProjectScreen[/NewProjectScreen:\nWelcome Section\nProject Information\nKey Dates\nDescription\nBudget Information\nGrant Configuration\nResource Creation/]
+    Start([Start]) --> NewProjectScreen[/New Project Screen/]
 
-    NewProjectScreen --> PrepareProject[Prepare Project:\nAssign screen values to\nProject record variable]
+    subgraph ProjectCreation["1️⃣ Project Creation"]
+        NewProjectScreen --> PrepareProject[Prepare Project Data]
+        PrepareProject --> IsInternal{Internal<br/>Type?}
+        IsInternal -->|Yes| SetInternal[Set Internal Flag]
+        IsInternal -->|No| CreateProject
+        SetInternal --> CreateProject[(Create Project)]
+    end
 
-    PrepareProject --> IsProjectTypeInternal{Is Project\nType Internal?}
+    subgraph GrantSetup["2️⃣ Grant Setup (Optional)"]
+        CreateProject --> HasGrant{Grant<br/>Funded?}
+        HasGrant -->|Yes| PrepareGrant[Prepare Grant Data]
+        HasGrant -->|No| InitCounter
+        PrepareGrant --> CreateGrant[(Create Project Grant)]
+        CreateGrant --> InitCounter[Initialize Counter]
+    end
 
-    IsProjectTypeInternal -->|Yes| SetInternalTrue[Set Internal = True]
-    IsProjectTypeInternal -->|No| CreateProject[(Create Project Record)]
-    SetInternalTrue --> CreateProject
+    subgraph ResourceLoop["3️⃣ Resource Creation Loop"]
+        InitCounter --> MoreResources{More<br/>Resources?}
+        MoreResources -->|Yes| ResourceScreen[/Resource Details Screen/]
 
-    CreateProject --> IsProjectFundedByGrant{Is Project\nFunded By Grant?}
+        ResourceScreen --> GetResource[Get Resource]
+        GetResource --> PrepareResource[Prepare Resource Data]
+        PrepareResource --> DupeCheck[Check for Duplicates]
 
-    IsProjectFundedByGrant -->|Yes| PrepareProjectGrant[Prepare Project Grant:\nAssign Grant and Coverage]
-    IsProjectFundedByGrant -->|No| ResetResourceCounter[Reset Resource Counter = 0]
+        DupeCheck --> IsDupe{Duplicate?}
+        IsDupe -->|Yes| ErrorScreen[/Error Screen/]
+        ErrorScreen -.Back.-> ResourceScreen
 
-    PrepareProjectGrant --> CreateProjectGrant[(Create Project_Grant Record)]
-    CreateProjectGrant --> ResetResourceCounter
+        IsDupe -->|No| GrantFunded{Grant<br/>Funded?}
+    end
 
-    ResetResourceCounter --> MoreResourcesToCreate{More Resources\nTo Create?}
+    subgraph GrantFunding["3️⃣a Grant Funding Configuration"]
+        GrantFunded -->|Yes| GetGrants[Get Project Grants]
+        GetGrants --> HasGrants{Has<br/>Grants?}
+        HasGrants -->|No| NoGrantsError[Set Error]
+        NoGrantsError --> ErrorScreen
 
-    MoreResourcesToCreate -->|Yes:\nCreateProjectResources=true\nAND\nResourcesCreatedIndex\n< NumResourcesToCreate| SetDisplayResourceNumber[Set Display Resource Number:\nCurrentResourceNumber =\nResourcesCreatedIndex + 1]
+        HasGrants -->|Yes| GrantLoop{{For Each Grant}}
+        GrantLoop --> GrantScreen[/Grant Funding Screen/]
+        GrantScreen --> FundedByGrant{Fund By<br/>This Grant?}
+        FundedByGrant -->|Yes| AddToCollection[Add to Collection]
+        FundedByGrant -->|No| GrantLoop
+        AddToCollection --> GrantLoop
 
-    SetDisplayResourceNumber --> ResourceDetailsScreen[/Resource Details Screen:\nResource Lookup\nRole\nLogged Time Multiplier\nEmployment Type\nIs Funded By Grants?/]
+        GrantLoop -->|Done| CreateResourceGrant[(Create Resource<br/>with Grants)]
+        CreateResourceGrant --> TransformGrants[Transform Grant Data]
+        TransformGrants --> CreateGrantLinks[(Bulk Create<br/>Grant Links)]
+        CreateGrantLinks --> Increment
+    end
 
-    ResourceDetailsScreen --> GetResourceForName[Get Resource For Name:\nQuery Resource record by ID]
+    GrantFunded -->|No| CreateResource[(Create Resource)]
+    CreateResource --> Increment[Increment Counter]
 
-    GetResourceForName --> PrepareProjectResourceRecord[Prepare Project Resource Record:\nAssign all field values]
+    Increment --> MoreResources
 
-    PrepareProjectResourceRecord --> GetProjectResourcesDupeCheck[Get Project Resources\nDupe Check:\nQuery for existing resource]
+    subgraph Summary["4️⃣ Summary & Completion"]
+        MoreResources -->|No| GetAllResources[Get All Resources]
+        GetAllResources --> SummaryScreen[/Summary Screen/]
+        SummaryScreen --> CreateMilestones{Create<br/>Milestones?}
+        CreateMilestones -->|Yes| LaunchMilestones[Launch Milestone Flow]
+        CreateMilestones -->|No| End
+        LaunchMilestones --> End([End])
+    end
 
-    GetProjectResourcesDupeCheck --> CheckForDuplicateProjectResources{Duplicate\nResource Found?}
+    %% Styling
+    classDef screenStyle fill:#E6E6FA,stroke:#333,stroke-width:2px
+    classDef dbStyle fill:#87CEEB,stroke:#333,stroke-width:2px
+    classDef loopStyle fill:#FFD700,stroke:#333,stroke-width:2px
+    classDef errorStyle fill:#FFB6C1,stroke:#333,stroke-width:2px
+    classDef startEnd fill:#90EE90,stroke:#333,stroke-width:2px
 
-    CheckForDuplicateProjectResources -->|Yes| SetDuplicateErrorMessage[Set Duplicate Error Message]
-    SetDuplicateErrorMessage --> ErrorScreen[/Error Screen:\nDisplay error message/]
-
-    CheckForDuplicateProjectResources -->|No| CheckIfFundedByGrants{Is Resource\nFunded By Grants?}
-
-    CheckIfFundedByGrants -->|Yes| GetProjectGrants[Get Project Grants:\nQuery Project_Grant records]
-
-    GetProjectGrants --> CheckIfGrantsFound{Grants\nFound?}
-
-    CheckIfGrantsFound -->|No| SetNoGrantsErrorMessage[Set No Grants Error Message]
-    SetNoGrantsErrorMessage --> ErrorScreen
-
-    CheckIfGrantsFound -->|Yes| LoopThroughGrants{{Loop Through Grants}}
-
-    LoopThroughGrants -->|For Each Grant| GrantFundingScreen[/Grant Funding Screen:\nIs resource funded by this grant?\nGrant Designation\nProject Role Classification/]
-
-    GrantFundingScreen --> CheckIfResourceFundedByGrant{Resource\nFunded By\nThis Grant?}
-
-    CheckIfResourceFundedByGrant -->|Yes| PrepareGrantProjectResource[Prepare Grant Project Resource:\nAdd to TempGrantProjectResources\ncollection]
-
-    CheckIfResourceFundedByGrant -->|No| LoopThroughGrants
-    PrepareGrantProjectResource --> LoopThroughGrants
-
-    LoopThroughGrants -->|After All Grants| CreateProjectResourceWithGrants[(Create Project Resource\nWith Grants)]
-
-    CreateProjectResourceWithGrants --> TransformGrantProjectResources[Transform Grant Project Resources:\nAdd Project_Resource__c lookup\nto grant resources]
-
-    TransformGrantProjectResources --> CreateGrantProjectResourcesAfterLoop[(Bulk Create\nGrant_Project_Resource records)]
-
-    CreateGrantProjectResourcesAfterLoop --> IncrementResourceIndex[Increment Resource Index:\nResourcesCreatedIndex + 1]
-
-    CheckIfFundedByGrants -->|No| CreateProjectResource[(Create Project Resource)]
-
-    CreateProjectResource --> IncrementResourceIndex
-
-    IncrementResourceIndex --> MoreResourcesToCreate
-
-    MoreResourcesToCreate -->|No:\nCreateProjectResources=false\nOR\nResourcesCreatedIndex\n>= NumResourcesToCreate| GetCreatedProjectResources[Get Created Project Resources:\nQuery all Project_Resource records\nfor this project]
-
-    GetCreatedProjectResources --> SummaryScreen[/Summary Screen:\nProject Details\nProject Resources Table\n'if CreateProjectResources=true'\nCreate Milestones Checkbox/]
-
-    SummaryScreen --> CheckIfCreateMilestones{Create\nMilestones?}
-
-    CheckIfCreateMilestones -->|Yes| LaunchAddMilestones[Launch Add Milestones\nSubflow]
-    CheckIfCreateMilestones -->|No| End([End Flow])
-    LaunchAddMilestones --> End
-
-    ErrorScreen -.->|Allow Back| ResourceDetailsScreen
-
-    style Start fill:#90EE90
-    style End fill:#FFB6C1
-    style NewProjectScreen fill:#E6E6FA
-    style ResourceDetailsScreen fill:#E6E6FA
-    style GrantFundingScreen fill:#E6E6FA
-    style SummaryScreen fill:#E6E6FA
-    style ErrorScreen fill:#FFB6C1
-    style CreateProject fill:#87CEEB
-    style CreateProjectGrant fill:#87CEEB
-    style CreateProjectResource fill:#87CEEB
-    style CreateProjectResourceWithGrants fill:#87CEEB
-    style CreateGrantProjectResourcesAfterLoop fill:#87CEEB
-    style LoopThroughGrants fill:#FFD700
+    class NewProjectScreen,ResourceScreen,GrantScreen,SummaryScreen screenStyle
+    class CreateProject,CreateGrant,CreateResource,CreateResourceGrant,CreateGrantLinks dbStyle
+    class GrantLoop loopStyle
+    class ErrorScreen errorStyle
+    class Start,End startEnd
 ```
 
 ## Key Components
